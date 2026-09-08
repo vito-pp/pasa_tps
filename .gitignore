@@ -1,3 +1,18 @@
+# Datos de GWOSC (el enunciado pide no entregarlos)
 *.hdf5
-*.venv
-/venv
+ 
+# Entornos virtuales, a cualquier profundidad del repo
+venv/
+.venv/
+env/
+ 
+# Python
+__pycache__/
+*.py[cod]
+ 
+# Jupyter
+.ipynb_checkpoints/
+ 
+# Sistema / editor
+.DS_Store
+.vscode/
