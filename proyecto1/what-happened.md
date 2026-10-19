@@ -86,6 +86,8 @@ En datos reales nadie conoce `s(n)`, así que no se puede medir directamente qu�
   - referencias imperfectas, `x = h∗η + ruido`, con `h₁ = [1, 0.5]`, `h₂ = [1, −0.4]` y ruido de medición 20 dB por debajo. Si `x = η` exacto, el problema es trivial.
   - Monte Carlo con 30 realizaciones (canciones y tramos al azar).
 
+  **Importante: en este camino `y(n)` no es una grabación; la armamos nosotros** sumando tres pedazos reales de canciones distintas (A para `s`, B para el EOG, C para el EMG). El notebook lo muestra en un gráfico pieza por pieza al principio de §4.
+
   Como conocemos `s`, se miden las métricas de la design review: `J(n)`, `J_min`, desajuste, velocidad, bias, RRMSE temporal y espectral, y correlación.
 - **Camino B, datos reales (cualitativo).** Se corre el filtro sobre canales crudos y se comprueban consecuencias de "si `e` fuera `s`, entonces…":
   1. el evento ocular desaparece en el promedio sincronizado sobre `e`;
@@ -130,6 +132,7 @@ En datos reales nadie conoce `s(n)`, así que no se puede medir directamente qu�
 
 - **μ̃ ≈ 0.03 es el mejor compromiso:** llega a `J_min` hacia los 11–12 s.
 - **Con μ̃ ≥ 0.1, `J(∞) < J_min`**: el desajuste da negativo, pero el RRMSE sube y la correlación cae. El filtro persigue las ráfagas y se come EEG. Es el ejemplo concreto de "el MSE solo no alcanza".
+- **Ojo: en casi todas las realizaciones el EMG no tiene ráfagas.** Las ráfagas duran pocos segundos por canción y el tramo de 20 s de `η_EMG` se elige al azar. En **solo 4 de las 30 realizaciones** el tramo cae sobre una ráfaga (pico de la envolvente > 3 veces la mediana). En las otras 26, el "ruido de músculo" es el ruido parejo de la referencia (EEG β/γ de otra canción + ruido del equipo). **Entonces estos números miden sobre todo la limpieza *sin* ráfagas, y no dicen mucho de cómo se comporta el filtro frente a una ráfaga real** (que es justo donde importa la "noise amplification" de LMS vs NLMS).
 - **Barrido de SNR (μ̃ = 0.03):**
   - con mucho ruido (−10 dB) mejora muchísimo: RRMSE 4.4 → 1.4;
   - con poco ruido (+10 dB) queda **apenas peor que no filtrar** (0.53 contra 0.45), porque el error propio del filtro pesa más que lo que limpia.
@@ -179,8 +182,9 @@ Cambio de potencia de `e` respecto de `y`, en dB (negativo = se sacó potencia):
    - que el filtro de EMG solo aprenda durante las ráfagas (μ̃ variable según la envolvente);
    - usar EMG sintético (estrategia B de `context.md` §8.4) para el semi-sintético.
 3. **Spread al apilar:** probar **normalizar cada referencia por separado** (un NLMS "por bloque"). Es una variante concreta que ataca el problema medido. ¿Y comparar con LMS y VS-LMS, como se prometió en la presentación?
-4. **EOG real:** buscar entre los otros sujetos alguno que **sí tenga parpadeos** (no todos tienen por qué estar igual de limpios). Si ninguno tiene, el EOG real queda solo como validación cualitativa y lo declaramos.
-5. **Otros sujetos:** repetir la inspección (§2 del notebook) en otros sujetos para ver si se repite lo de sub-01 (datos preprocesados, EMG en pocas canciones). Hay que bajar sus `.set` con el loop de §3.
+4. **Ráfagas en el semi-sintético:** como solo 4 de 30 realizaciones tienen una ráfaga de EMG (§6.3), ¿forzamos que el tramo de `η_EMG` contenga una ráfaga, o sumamos ráfagas sintéticas? Sin eso no podemos medir bien el comportamiento frente a cambios bruscos de potencia, que es el argumento principal para elegir NLMS sobre LMS.
+5. **EOG real:** buscar entre los otros sujetos alguno que **sí tenga parpadeos** (no todos tienen por qué estar igual de limpios). Si ninguno tiene, el EOG real queda solo como validación cualitativa y lo declaramos.
+6. **Otros sujetos:** repetir la inspección (§2 del notebook) en otros sujetos para ver si se repite lo de sub-01 (datos preprocesados, EMG en pocas canciones). Hay que bajar sus `.set` con el loop de §3.
 
 ---
 
@@ -202,7 +206,7 @@ Cambio de potencia de `e` respecto de `y`, en dB (negativo = se sacó potencia):
 | 1 | Carga los `.set` con MNE, pasa a µV, recorta a 10–110 s y submuestrea a 250 Hz |
 | 2 | Inspección: correlación EOG–EEG, eventos del EOG, curtosis del EMG, PSD; arma las referencias de EMG |
 | 3 | `nlms()` (fórmula de la teórica línea por línea, con comentario por línea), `wiener()`, métricas |
-| 4 | Semi-sintético: chequeos de cordura, barrido de μ̃, M y SNR |
+| 4 | Semi-sintético: cómo se arma `y(n)` (tabla + gráfico de una mezcla pieza por pieza), chequeos de cordura, barrido de μ̃, M y SNR |
 | 5 | Datos reales: t17 (EOG) y t15 (EMG) |
 | 6 | Validación sin ground truth (las 8 pruebas de §5 de este archivo) |
 | 7 | Conclusiones y tabla de problemas, causas e ideas |
